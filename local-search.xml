@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  
+  
+  
+  <entry>
+    <title>Blender中mmd方案下皮肤阴影原理及优化</title>
+    <link href="/2026/03/21/New-Post/"/>
+    <url>/2026/03/21/New-Post/</url>
+    
+    <content type="html"><![CDATA[<blockquote><p>先放一只llk在这里当吉祥物</p></blockquote><p><img src="/posts_resource/llk.gif" alt="kawa"></p><p>接触过mmd插件，导入过vrm模型的朋友们一定会遇到下面这种情况：<br><video controls width="100%" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"><br>  <source src="/posts_resource/mmdMethod.mp4" type="video/mp4"><br></video></p><p>欸你这阴影也太奇怪了吧。正看还好，视角稍微变化一下就难以直视啊。</p><p>于是我针对这个状况简单做了一个优化，先直接看一下结果，如下：<br><video controls width="100%" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"><br>  <source src="/posts_resource/improvedMethod.mp4" type="video/mp4"><br></video><br>实现了边缘阴影的平滑过渡，效果还可以。那么接下来就来聊聊我实现这一效果的思路。</p><p>首先我们需要了解下mmd方案的实现方案：通过屏幕空间的物体法线转换成采样纹理用的uv，其插件连接和采样用的纹理如下：</p><div style="display: flex; gap: 0px;">  <img src="/posts_resource/screenUV.png" style="width: 80%; border-radius: 8px;">  <img src="/posts_resource/skin2.png" style="width: 100%; border-radius: 0px;"></div><br></br>用大白话稍微解释一下：将模型的法线数据转换到屏幕空间下，然后在屏幕的角度观测模型法线的朝向，左右，上下就对应屏幕的x，y轴，将这个稍加变化（对应映射节点,涉及到坐标空间变化，矢量的最大最小范围变化，需要映射一下），用作采样纹理的UV，就可以让屏幕视角看起来法线朝下的部分，一般来说就是不受光的部分，采样到纹理中深色部分。<blockquote><p>所以其实skin纹理最关键的是y分量，完全可以做成一个一维图。因此一张图中实际可以存储多个色号提高利用率？</p></blockquote><p>接下来说说优化部分：我们要得到过渡的效果，其实是求一个合理的线性变化。这里的问题是原纹理是离散的，只有两种颜色而不存在中间过渡。</p><blockquote><p>欸那我手动涂抹一下改一下纹理不就好了（）那我不就水不了了嘛）</p></blockquote><p>这一点也比较好解决，结合实际情况会发现引入连续的y分量即可。也就是利用uv中v分量，构建一个线性关系函数，然后可以把这个函数结果传递给颜色的饱和度分量，因为这里刚好有一个量是白色嘛比较方便。<br><img src="/posts_resource/improvedUV.png" alt="节点参考"><br><img src="/posts_resource/improvedSkin2.png" alt="改善后的贴图参考"></p><p>说实话实际去做的时候不会想得这么多，一方面这个效果比较简单，很容易想到找一个线性关系去过渡。但我个人认为理清其中的某个思路比较关键，可以通用到其他问题的解决方案。</p>]]></content>
+    
+    
+    
+    <tags>
+      
+      <tag>Blender mmd插件 皮肤阴影 屏幕法线</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  
+</search>
