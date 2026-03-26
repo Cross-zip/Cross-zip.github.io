@@ -26,11 +26,15 @@
 <meta property="og:site_name" content="Cross的个人博客">
 <meta property="og:description" content="总的来说是把先前的理论知识付诸实践。 之前有了解过一些合批处理，实例化，以及各种Buffer缓冲区，那么现在就是去用profile工具对比测试一下。性能优化这方面带着了解看看。 然后就是按着一定想法去做一些更加完善的效果，作为作品集的一部分。目前正在推进的，也就是这周刚刚开始的一个屏幕水滴效果。 起初的构想是computeSahder在屏幕大小的纹理上构建水滴的sdf距离场，然后shader部分负">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/posts_resource/post2/waterTest.png">
+<meta property="og:image" content="http://example.com/posts_resource/post2/seed1.png">
+<meta property="og:image" content="http://example.com/posts_resource/post2/seed2.png">
 <meta property="article:published_time" content="2026-03-24T15:22:46.000Z">
-<meta property="article:modified_time" content="2026-03-25T10:00:37.147Z">
+<meta property="article:modified_time" content="2026-03-26T09:56:54.278Z">
 <meta property="article:author" content="Cross-zip">
 <meta property="article:tag" content="Profile WaterDrop SDF">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://example.com/posts_resource/post2/waterTest.png">
   
   
   
@@ -326,7 +330,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.1k 字
+          1.3k 字
         
       </span>
     
@@ -337,7 +341,7 @@
         
         
         
-          10 分钟
+          12 分钟
         
       </span>
     
@@ -391,7 +395,15 @@
 <p>&#x2F;&#x2F;&#x2F;3.25编</p>
 <p>出现了一个让人头疼的问题，把前后两个核函数合并的时候需要获取周围最大半径内的种子点。保底（稳定）的做法是遍历半径内的像素点，但是写起来有些地方也比较麻烦（觉得不够优雅）。但我尝试去将种子点存储到一个区域方便后续获取。因为GPU的异步操作特性，同步存储可以用到AppendStructBuffer，然而并不支持直接获取长度，也不支持下标查询，自己手写lock锁比较臃肿，且不能保证高效。<br>梳理一下我这个做法的需求，本质上是需要每一个点去查找周围可能存在的种子点，而我的种子点存储方式（因为生成的方式）读取效率低下。所以现在解决的方法一眼能看到的，一种是改变存储方式，那就要改变生成方式；一种是用之前说的保底做法。或许还有我没有了解到的方法？</p>
 <p>&#x2F;&#x2F;&#x2F;3.25晚编<br>原子计数器是对的，网格划分是对的<br>前者解决了异步存储问题，后者应该说是针对稀疏种子点的一种优化策略，之前一闪而过想到过，碍于主要矛盾不在这没去思考。等我写一手.</p>
-
+<p>&#x2F;&#x2F;&#x2F;3.26编<br>昨晚之后处理了一些bug，然后把屏幕水滴的种子生成给做了出来，初步捏了一下静态水滴的形状，不过不算理想</p>
+<div style="display: flex; gap: 0px;">
+  <img src="/posts_resource/post2/waterTest.png" srcset="/img/loading.gif" lazyload style="width: 80%; border-radius: 8px;">
+  <img src="/posts_resource/post2/seed1.png" srcset="/img/loading.gif" lazyload style="width: 100%; border-radius: 0px;">
+  <img src="/posts_resource/post2/seed2.png" srcset="/img/loading.gif" lazyload style="width: 100%; border-radius: 0px;">
+</div>
+<br></br>
+有几方面待优化，一个是利用前面提到的网格划分类似的想法，把一定区域内的种子视作为一个，避免点堆积
+一个是水滴的下方光线遮蔽，或者说伪阴影？的优化，目前是固定了斜下方，方向稍微调整一下，还有不同水滴的阴影强度需要依靠某样东西来决定，比如光线强度，越靠某个方向阴影越弱这样的
                 
               </div>
             
