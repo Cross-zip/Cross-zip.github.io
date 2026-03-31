@@ -32,7 +32,7 @@
 <meta property="og:image" content="http://example.com/posts_resource/post2/waterDrop1.png">
 <meta property="og:image" content="http://example.com/posts_resource/post2/autoCode.png">
 <meta property="article:published_time" content="2026-03-24T15:22:46.000Z">
-<meta property="article:modified_time" content="2026-03-30T14:08:55.761Z">
+<meta property="article:modified_time" content="2026-03-31T12:35:36.911Z">
 <meta property="article:author" content="Cross-zip">
 <meta property="article:tag" content="Profile WaterDrop SDF">
 <meta name="twitter:card" content="summary_large_image">
@@ -332,7 +332,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          2.3k 字
+          3k 字
         
       </span>
     
@@ -343,7 +343,7 @@
         
         
         
-          19 分钟
+          26 分钟
         
       </span>
     
@@ -418,6 +418,21 @@
 <blockquote>
 <p>明天一定开始优化waterdrop生成方案</p>
 </blockquote>
+<p>&#x2F;&#x2F;&#x2F;3.31编<br>  —–优化生成方案ing—–<br>  继续往下想着就会注意到从一开始的计算密度方式就不合适，存在问题。当然在后续思考中我自己想到了一个解决方案。<br>  因为本人在思考的时候不太能记得住思考过程，所以渐渐养成了码字记录思考过程的习惯，以下是先前记录的部分过程：</p>
+<pre><code class="hljs">需要一个用于网格区域的原子计数器，计算当前区域内种子点的个数，可能用于平均位置计算。
+每个grid需要管理一个counter，现两种做法：
+  1.每个grid仅一个seed，那么grid大小更接近控制密度，这样的话需要优化一开始的密度控制，而且也可以把这个看作是buffer类型的texture
+  2.每个grid计算若干个seed的平均位置，这样每个grid需要额外管理一个seedBuffer
+(加起来其实也就是一张texture大小，但是在代码会稍微多一些)，计算交给cpu；这种做法在处理某些精确计算的时候可能更有用
+综上所述选择第一种做法
+
+不管怎么做，在不改变seed图的情况下，去动态生成/改变密度似乎不太可行，要实现或许就要提前储存一些数据
+不过我初步设想了一种做法，或许可以模拟密度降低的样子：
+间断性计算点距。假设原本我们有一张很密集的seed图，我们正常采样都是逐个像素计算，得出的sdf图应该是很密集的斑状点图
+</code></pre>
+<p>  现在我们不再逐个像素计算，可能是每间隔10个像素采样一次，理论上应该能得倒密度降低的视觉效果，只要原本的seed图足够密集。<br>  那么现在就可以通过改变采样距离来改变密度效果，而没必要去改变原seed图，对调试友好，也有做更多动态效果的可能</p>
+<p>  想到这一点后就会发现前面很多做法都没必要了，一些参数都可以去掉。还好之前写了工具，改起来方便。</p>
+<p>  总结来说其实是一个采样的问题，采样在图形学中会经常被提及。这边突然用到这一概念，感觉像是基本功一样的东西冒出来）</p>
 
                 
               </div>
