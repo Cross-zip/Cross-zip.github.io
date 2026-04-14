@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  
+  
+  
+  <entry>
+    <title>Blender节点整理插件</title>
+    <link href="/2026/04/13/nodeManager/"/>
+    <url>/2026/04/13/nodeManager/</url>
+    
+    <content type="html"><![CDATA[<blockquote><p>年初的时候突发奇想制作的，当时去了解了一下blender的api，写下的插件，这里做一下收录</p></blockquote><p>使用blender节点编辑器，或者其他软件的节点功能的人应该都会注意到一个问题<br>就是当我们再写一个相对复杂或者计算节点比较多的效果的时候，节点通常会乱作一团，比较难阅读<br>查了查似乎没有相关的插件去解决这个问题，除了NodeWrangler有一个自动对齐，但只是简单的同行对齐</p><video controls width="100%" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">  <source src="/posts_resource/NodeManager/nodeWrangler.mp4" type="video/mp4"></video><p>并不能树状排列节点，于是我自己去研究了一下，想出了一种解决方案，可以实现如下效果：</p><video controls width="100%" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">  <source src="/posts_resource/NodeManager/nodeManager.mp4" type="video/mp4"></video><p>稍作解释：只需选中一个节点，然后以该节点为终点，整理所有前向节点。而且确实可以达到一个树状排列效果</p><p>不过不能说效果是非常完美的，比如对于一群相同类型的节点，在视觉上他们放在邻近的位置会更好，<br>但是插件在运行时只是把他们一视同仁的当作一个node，然后根据自身前后连接的节点，和同深度节点前后连接节点的关系，综合考虑，然后排布出来。<br>这里的节点之间前后关系比较麻烦，blender并不会存储前后节点的关系，所以插件里会有一部分先遍历收纳节点关系的逻辑</p><p>我后来还想过另一种收纳节点关系的逻辑，但我也不是什么图论高手，代码可能也不够优秀，只是能实现一点效果。<br>这里放一个github链接分享一下代码逻辑，来吃一口大的（）<br><a href="https://github.com/Cross-zip/NodeManager">https://github.com/Cross-zip/NodeManager</a></p><p>插件目前还有一些小瑕疵，目前还没完善，最终效果还是会有连线越过节点的情况，但是可以大幅度理清节点的前后关系。至少我目前自己用还是比较顺手。</p>]]></content>
+    
+    
+    <categories>
+      
+      <category>效果总结</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>Blender 节点整理 插件</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>复古滤镜后处理效果实现</title>
+    <link href="/2026/04/12/retroFilter/"/>
+    <url>/2026/04/12/retroFilter/</url>
+    
+    <content type="html"><![CDATA[<blockquote><p>4-12编</p></blockquote><p>看番的时候遇到一个别致的op，主要是复古滤镜效果。遂打算复现一下</p><div class="group-image-container"><div class="group-image-row"><div class="group-image-wrap"><img src="/posts_resource/RetroFilter/op1.png"></div><div class="group-image-wrap"><img src="/posts_resource/RetroFilter/op2.png"></div></div><div class="group-image-row"><div class="group-image-wrap"><img src="/posts_resource/RetroFilter/op3.png"></div><div class="group-image-wrap"><img src="/posts_resource/RetroFilter/op4.png"></div></div></div><blockquote><p>4-13编</p></blockquote><p>稍微分析一下这种画面的感觉<br>不专业的来说，画面糊糊的，同时还有点老旧感</p><p>于是我拿windows自带的图片编辑器简单调整了一下各个参数，企图“还原”复古滤镜之前的感觉<br>以捧花的一张为例，可能不是很到位，效果如下：</p><div class="group-image-container"><div class="group-image-row"><div class="group-image-wrap"><img src="/posts_resource/RetroFilter/op2Rejust.png"></div></div></div><p>各参数调节：</p><div class="group-image-container"><div class="group-image-row"><div class="group-image-wrap"><img src="/posts_resource/RetroFilter/param1.png"></div></div><div class="group-image-row"><div class="group-image-wrap"><img src="/posts_resource/RetroFilter/param2.png"></div></div></div><p>其实调整前和过程中凭感觉也能说出一些要素了，参数化调整之后更好说明</p><p>个人感觉是，画面偏暗黄（暖色），且画面对比度略低，较为模糊<br>多看几眼调整后还是有点缺陷，不过这次复原尝试总体来说效果还行（？）<br>其实可以不用这么分析直接丢给ai就行，不过我觉得挺好玩的就干了（）</p><p>分析到这，接下来开始尝试还原</p><p>转念一想这不就是在unity里做一个色彩平衡器吗（）虽说还没搓过但确实不算有新意？而且URP的PostProcessing里面似乎就有相关的效果</p><p>但！是！（震声）</p><p>既然是在引擎里还原，我有个思路：<br>利用引擎里的数据，特别是3D引擎特有的东西，比如深度法线图这些数据，在最后色彩调节的时候或许可以blend一下？</p><p>不过目前只有一个出发点，不知道能做到什么程度<br>先把看下官方实现，试着能不能在这基础上修改一些？</p><blockquote><p>好像和最一开始的复古滤镜效果偏差有点大，大不了改标题（）</p></blockquote><p>先玩了一下官方提供的后处理效果，配合前面做的水滴效果前后对比看一下：</p><div class="row">  <div class="col-6">    <video src="/posts_resource/RetroFilter/noPostProcessing.mp4" controls style="width:100%"></video>  </div>  <div class="col-6">    <video src="/posts_resource/RetroFilter/withPostProcessing.mp4" controls style="width:100%"></video>  </div></div><blockquote><p>主包主包你的场景为什么一直有三个猴头啊——————可是我觉得这很神圣啊（）</p></blockquote><p>加加加加了几个后处理效果：暗角，色彩调整，白平衡，景深<br>根据之前分析的效果，做了相应的处理。不过这里景深应该是计划外的东西，发现和之前的屏幕水滴很搭于是就加了。</p><p>如果只是单纯的复古感，目前遇到了一个小问题，就是所谓的模糊效果，或者更准确些是朦胧感。<br>这种朦胧感我认为一部分来自于低对比低饱和，不过也只是稍微降低一些。<br>但还有一部分，不是景深效果里的模糊能体现的。<br>查询了解了一下，结论在于“质感”，胶片的质感。涉及到两个方面： 椒盐噪声 &amp; 漏光效果</p><p>这里贴一下ai解释：</p><pre><code class="hljs">1. 椒盐噪声的实现 (Salt and Pepper Noise)椒盐噪声本质上是离散的极值脉冲。实现它的算法非常直接：逻辑： 随机选择图像中的一部分像素点，将其亮度值强制设为最大（白点/盐）或最小（黑点/椒）。代码思路 (Python/NumPy 伪代码)：Python假设密度为 0.02 (2% 的像素受影响)mask = np.random.rand(*image.shape[:2]) image[mask &lt; 0.01] = [0, 0, 0]        # 1% 设为黑色image[mask &gt; 0.99] = [255, 255, 255]  # 1% 设为白色复古感进阶： * 不要用纯黑白： 真正的老照片颗粒是化学银盐，你可以让噪声带一点深褐色。结合高斯噪声： 先加一层底部的微弱高斯颗粒（像雾一样），再点缀几颗突出的椒盐点，层次感更强。2. 随机漏光的实现 (Light Leaks)漏光不是“滤镜”，它更像是一种叠加（Overlay）。它通常模拟胶片相机后盖漏光导致的感光过度。方法 A：图层混合法（最常用）这种方法效果最自然，适合 UI 或 App 开发。准备素材： 准备几张带有红、橙、紫色的不规则光晕图片（背景必须是纯黑）。随机变换： 随机对素材进行 翻转、旋转 90/180/270 度，以及随机缩放。混合模式： 使用 “滤色”（Screen） 或 “线性减淡（增加）”（Linear Dodge/Add） 模式叠加到原图上。原理： 黑色部分的像素值为 0，在滤色模式下不会对原图产生任何影响，只有彩色光晕会亮化原图。方法 B：程序化生成（动态随机）如果你需要纯代码生成：梯度填充： 创建一个径向或线性渐变。颜色选择： 选择 RGBA(255, 80, 0, alpha) 这种暖橙色到透明的过渡。随机参数： * 位置： 随机出现在画面的四个边缘。形状： 使用不规则的 椭圆，并施加极大的 高斯模糊（Gaussian Blur）。透明度： 随机设置透明度在 20% 到 60% 之间。3. 如何让它们“看起来更高级”？为了避免效果看起来像地摊货，可以加入以下细节：动态阈值： 漏光通常伴随着对比度的局部下降。在漏光区域，稍微提升一点 黑色色阶（Lift），模拟光线冲淡了暗部细节的效果。通道分离： 漏光通常对 红色通道 影响最大。在生成漏光时，可以只增强 R 通道，而保持 B 通道相对稳定，这样更有胶片感。掩膜限制： 椒盐噪声可以只分布在暗部（暗部的化学颗粒感更强），而高光部分可以减少噪声，这符合胶片的物理特性。</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>开发日志</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>复古滤镜 后处理 Unity</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>WaterDrop及工具开发2.0</title>
+    <link href="/2026/04/09/Post3/"/>
+    <url>/2026/04/09/Post3/</url>
+    
+    <content type="html"><![CDATA[<blockquote><blockquote><blockquote><blockquote><p>未完全导入图片版本</p></blockquote></blockquote></blockquote></blockquote><p><img src="/posts_resource/post2/waterDrop1.png" alt="水滴+模糊"><br>这是一开始自己琢磨出来的效果，从seed生成到法线模拟和水滴边缘模糊，路子比较野。主要对代码部分不是很满意，特别是seed生成和查找的地方，所以后面重制了一下。</p><p>seed生成部分我改用了网格划分的思路，将整个屏幕划分为若干网格，每个网格内根据网格ID随机生成一个seed，<br>查找seed部分我去了解了一下一些传统的，或者说更常见的查找seed做法，如JFA（JUmp Flooding Algorithm）算法。确实巧妙，算法魅力时刻了</p><p>简单说说我对这个算法的理解：</p><p>一般来说我我们查找一张rt上离当前像素最近的seed点，可能就需要遍历整个rt，或者加以限制就需要遍历一定半径范围内部的像素点，总体来说时间复杂度很高。</p><p>JFA算法的思路则是每个像素点都存储当前已知离自身最近的seed点坐标，这样可以达到信息传递的效果。</p><p>在这基础之上，每个像素点进行多轮的查找，每次更新自身存储的最近坐标，初始为seed点自身或者是无穷远；每轮查找的对象是自身周围八个方向，一定步长的像素点，步长随轮次降低，初始为rt（假设是方形）边长一半，经过一个轮次减半，最后为1也就是检查相邻像素。总体查找次数是8* log2（rt.width）,一般来说可以降低到（8*）10次以内</p><p>进一步理解的话，可以想象一组长度为N的一维数据，第一轮信息查找的时候，从index&#x3D;x到index&#x3D;x+N&#x2F;2-1为第一组数据，剩余部分为第二组数据，现在进行的操作是两组数据，根据各自在组内的位置一一对应交换数据，第二轮则是在划分后的各组内再进行一次划分，以此类推，直到每组只有一个数据为止。</p><p>听起来似乎有一些递归的意思，但因为gpu特性，每个像素并行操作，其实应该是迭代的来写。而且需要两张rt交换读写，所以需要csharp操作一下</p><p>csharp端代码参考如下：</p><pre><code class="hljs">    for (int i = 0; i &lt; stepMax; i++)    {        int Step= Mathf.CeilToInt(Mathf.Pow(2, stepMax-i-1));                cmd.SetComputeTextureParam(computeShader, kernel, rtReadID, rtReadHandle);        cmd.SetComputeTextureParam(computeShader, kernel, rtWriteID, rtWrite);        cmd.SetComputeFloatParam(...)        ...         cmd.SetComputeIntParam(computeShader, stepID, Step);///确定每一轮查找的步长                int gx = Mathf.CeilToInt(cameraWidth / 8.0f);        int gy = Mathf.CeilToInt(cameraHeight / 8.0f);        cmd.DispatchCompute(computeShader, kernel, gx, gy, 1);                (rtReadHandle,rtWrite)=(rtWrite,rtReadHandle);///交换读写rt    } </code></pre><p>接下来计算sdf，模拟法线和之前的思路差不多，在此之上追加了动态效果，水滴大小渐小，其他位置随机出现新的水滴，以此循环。结果如下：</p><video controls width="100%" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">  <source src="/posts_resource/post2/JFAwaterDrop.mp4" type="video/mp4"></video>(顺手写了一个降采样，自带的mipMap功能会因为renderPass的原因反复创建mipmap链，对展示效果来说不影响，但我还是借机尝试手写了一下)<p>不过模糊感感觉还差一点意思，只有水滴遮住的部分有模糊不够，我需要一种全屏的朦胧感（所以上面顺手写了一个降采样试试，虽说不是要像素风的朦胧感），或者说加上水流轻微流动&#x2F;扭曲的感觉。这一块我打算单开来研究一下，应该是和流体模拟沾边？或者直接用一个flowMap。总之会另外写一个blog。</p><p>这里放一下降采样之后的动态纯享：</p><video controls width="100%" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">  <source src="/posts_resource/post2/JFApixel.mp4" type="video/mp4"></video><p>接下来简单聊一下中间写的小工具。</p><p>csharp似乎有提供相关的接口，方便写一些工具管理文件。不过这方面我确实不太清楚，一个标准一点的文件资源或者代码生成的管理应该是什么样的。python我写起来觉得会更顺手一些，独立于引擎之外有坏处也有好处，可以避免和引擎环境的某些东西产生冲突，有bug方便查找，暂时可以满足个人需求</p><p>总体来说工具的结构比较简单，经过了几次迭代，最后效果是，以一个renderPass类的模板为基础，json文件为参数源，在模板划分了一个区域专门用作json里参数的set，初次生成之后每次删改参数就在json里修改，重新运行也只会覆盖区域内的东西，区域外已有的部分不会变动。另外可调整的参数也另外生成了一个shader文件，专门用于参数的修改。</p>]]></content>
+    
+    
+    <categories>
+      
+      <category>效果总结</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>Profile WaterDrop SDF</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>WaterDrop及工具开发</title>
+    <link href="/2026/03/24/Post2/"/>
+    <url>/2026/03/24/Post2/</url>
+    
+    <content type="html"><![CDATA[<p>总的来说是把先前的理论知识付诸实践。</p><p>之前有了解过一些合批处理，实例化，以及各种Buffer缓冲区，那么现在就是去用profile工具对比测试一下。性能优化这方面带着了解看看。</p><p>然后就是按着一定想法去做一些更加完善的效果，作为作品集的一部分。<br>目前正在推进的，也就是这周刚刚开始的一个屏幕水滴效果。</p><p>起初的构想是computeSahder在屏幕大小的纹理上构建水滴的sdf距离场，然后shader部分负责水滴的透明+折射效果。主要的参考对象除了脑海中之前见过的类似画面，还有就是我的电脑桌面就是这样的一个效果，不过其中有一些flowmap实现的东西，暂且没有考虑去做。<br>后来我很快注意到水滴的动态效果，水滴分布的噪声图，以及sdf和shader部分对应的一些问题，解决方法并不难想，但有些还是不那么“正规”。比如说噪声图这种，我觉得在一个工业流程中，应该是其他软件根据特定需求制作好再导入引擎，而非我在ComputeShader里面生成，然后传递给下一个kernel使用。这里也引出一个问题就是，我对一些材质&#x2F;特效制作软件其实不算熟悉，虽然说这些其实更适合特效&#x2F;材质向的TA使用，对于一个大概是走渲染（后处理）的实习生来说，这些了解一些或许更好，但从目前最有效率的方法来看，我大概会暂且搁置。不过在kernel里手动生成的时候也算熟悉一些原理。</p><blockquote><p>截止到3.24晚，目前创建出了相关的代码文件，做好了参数绑定结构等等，对于静态水滴的形状和sdf构建已经形成，多个种子随机分布也建成，接下来打算先把shader部分写一下初步看看效果。</p></blockquote><p>&#x2F;&#x2F;&#x2F;3.25编</p><p>出现了一个让人头疼的问题，把前后两个核函数合并的时候需要获取周围最大半径内的种子点。保底（稳定）的做法是遍历半径内的像素点，但是写起来有些地方也比较麻烦（觉得不够优雅）。但我尝试去将种子点存储到一个区域方便后续获取。因为GPU的异步操作特性，同步存储可以用到AppendStructBuffer，然而并不支持直接获取长度，也不支持下标查询，自己手写lock锁比较臃肿，且不能保证高效。<br>梳理一下我这个做法的需求，本质上是需要每一个点去查找周围可能存在的种子点，而我的种子点存储方式（因为生成的方式）读取效率低下。所以现在解决的方法一眼能看到的，一种是改变存储方式，那就要改变生成方式；一种是用之前说的保底做法。或许还有我没有了解到的方法？</p><p>&#x2F;&#x2F;&#x2F;3.25晚编<br>原子计数器是对的，网格划分是对的<br>前者解决了异步存储问题，后者应该说是针对稀疏种子点的一种优化策略，之前一闪而过想到过，碍于主要矛盾不在这没去思考。等我写一手.</p><p>&#x2F;&#x2F;&#x2F;3.26编<br>昨晚之后处理了一些bug，然后把屏幕水滴的种子生成给做了出来，初步捏了一下静态水滴的形状，不过不算理想</p><div style="display: flex; gap: 0px;">  <img src="/posts_resource/post2/waterTest.png" style="width: 80%; border-radius: 8px;">  <img src="/posts_resource/post2/seed1.png" style="width: 100%; border-radius: 0px;">  <img src="/posts_resource/post2/seed2.png" style="width: 100%; border-radius: 0px;"></div><br></br>有几方面待优化，一个是利用前面提到的网格划分类似的想法，把一定区域内的种子视作为一个，避免点堆积一个是水滴的下方光线遮蔽，或者说伪阴影？的优化，目前是固定了斜下方，方向稍微调整一下，还有不同水滴的阴影强度需要依靠某样东西来决定，比如光线强度，越靠某个方向阴影越弱这样的<p>&#x2F;&#x2F;&#x2F;3.26晚编<br><img src="/posts_resource/post2/waterDrop1.png" alt="水滴+模糊"><br>稍微修改一下能出一点效果，不过还不够。还有一个尝试性的动态效果暂时就不放上来了。先去优化一下种子生成逻辑的部分。然后可能会尝试找一些案例场景文件测试一下，我目前的场景还是太初始化了，考虑到后面可能要放到作品集里还是先美化一部分东西。</p><p>&#x2F;&#x2F;&#x2F;3.27编<br>虽然昨天说要美化一些东西但好像美化到代码上了（）<br>因为编写的时候需要绑定很多参数，从computeShader绑定到csharp到shader文件的property，每多&#x2F;修改一个参数就需要多写若干行代码，于是用python写了一个脚本，以json文件作为唯一信息源，去自动生成c#绑定文件和shader文件的property，顺便优化了一下代码结构，迁移参数到一个统一的材质实例中。<br><img src="/posts_resource/post2/autoCode.png" alt="自动生成的脚本（部分）"><br>自动生成的时候没去进行缩进操作，毕竟是自己用，非功能性需求就适当忽略。<br><br></br><br>脚本工具编写的时候也有些取舍问题。作为一个自动化脚本，能节省重复性内容，但是还需要额外的逻辑补充，这个对于不同的核函数是不同的，所以尽管我想让脚本把findkernel和dispatch都帮我写了，但这样写起来，嗯，至少我觉得难受。所以实际半自动就行吧。</p><p>明天休息一天，和朋友约了去线下展会</p><blockquote><p>所以网格划分又被鸽了</p></blockquote><p>&#x2F;&#x2F;&#x2F;3.30编<br>周末没写东西，周一恢复。<br>回忆了一下上周五写的脚本，只能说拓展性很低啊，很多自己的模板内容在里面，修改得从代码改，感觉不如ai补全啊（）这种情况的一次性脚本，还是自己写着玩玩的，就当练手了<br>另外，这里记录一个小问题。上周截的一张图，可以注意到虽然是rider打开的脚本，但是很多代码行都是白色的，也就是说rider实际上没有把这段脚本接入监管。因为我是用py脚本直接在文件目录创建的，所以和在unity里直接创建还是有区别。意识到这一点之后我查看了资源管理器，缺少meta文件。于是打开unity后，自动生成了meta文件，然后代码的颜色显示就恢复正常。</p><p>还有这些更代码向的东西，一方面觉得用到的技术不是很高深，一方面不像shader&#x2F;图形渲染那样直观，贴代码总觉得在写实验报告，所以图片就比较少）</p><blockquote><p>明天一定开始优化waterdrop生成方案</p></blockquote><p>&#x2F;&#x2F;&#x2F;3.31编<br>  —–优化生成方案ing—–<br>  继续往下想着就会注意到从一开始的计算密度方式就不合适，存在问题。当然在后续思考中我自己想到了一个解决方案。<br>  因为本人在思考的时候不太能记得住思考过程，所以渐渐养成了码字记录思考过程的习惯，以下是先前记录的部分过程：</p><pre><code class="hljs">需要一个用于网格区域的原子计数器，计算当前区域内种子点的个数，可能用于平均位置计算。每个grid需要管理一个counter，现两种做法：  1.每个grid仅一个seed，那么grid大小更接近控制密度，这样的话需要优化一开始的密度控制，而且也可以把这个看作是buffer类型的texture  2.每个grid计算若干个seed的平均位置，这样每个grid需要额外管理一个seedBuffer(加起来其实也就是一张texture大小，但是在代码会稍微多一些)，计算交给cpu；这种做法在处理某些精确计算的时候可能更有用综上所述选择第一种做法不管怎么做，在不改变seed图的情况下，去动态生成/改变密度似乎不太可行，要实现或许就要提前储存一些数据不过我初步设想了一种做法，或许可以模拟密度降低的样子：间断性计算点距。假设原本我们有一张很密集的seed图，我们正常采样都是逐个像素计算，得出的sdf图应该是很密集的斑状点图</code></pre><p>  现在我们不再逐个像素计算，可能是每间隔10个像素采样一次，理论上应该能得倒密度降低的视觉效果，只要原本的seed图足够密集。<br>  那么现在就可以通过改变采样距离来改变密度效果，而没必要去改变原seed图，对调试友好，也有做更多动态效果的可能</p><p>  想到这一点后就会发现前面很多做法都没必要了，一些参数都可以去掉。还好之前写了工具，改起来方便。</p><p>  总结来说其实是一个采样的问题，采样在图形学中会经常被提及。这边突然用到这一概念，感觉像是基本功一样的东西冒出来）</p><p>&#x2F;&#x2F;&#x2F;4.3编<br>周三因为一些事情休息了一天，周四晚上做完赶着回宿舍洗澡不然没水）所以没来的及记录<br>先补一下过去两天内的一些思考和实践：</p><p>首先是31号晚上想到的想法：通过改变”采样“距离来实现密度的控制。可能突然想到会导致自身稍微有些激动，细节上没有去验证，所以按照当时的大致想法不太可行。<br>说实话我自身在这个效果上花了有一些时间了，纯自己研究应该也要有个限制，不然会有些内耗了。所以打算向外求索看看。<br>在那之前，也就是我周四在做的事情，是修正了脚本生成工具，和我csharp参数绑定里面一个很大的错误。<br>之前绑定参数用的csharp脚本存在一处十分不妥的地方，我把绑定参数用的脚本类所在的大类，继承了monobehaviour。但既然我在写render的内容，那么交托renderFeature,renderPass理应更安全更合适一些，也就是在管线层面工作而非物体层面。之前有遇到和似乎生命周期相关的bug，也是因为把shader相关的参数绑定相当于挂载到了一个gameobject上面，不方便管理。挂载到管线里应该会省事一些。</p><blockquote><p>因为之前基本是直接写shader的内容，csharp，或者说unity引擎其他部分，除了用renderfeature，几乎没有接触，这里一开始没注意到。不过好在说周三中途休息的一天突然注意到了，及时修正。</p></blockquote><p>另外，既然修正脚本生成工具的模板内容，也顺便改了些内容让工具更合理。<br>因为这个工具的主要逻辑是根据json里的参数数据分门别类，为不同的绑定参数代码追加相应的内容，形成一个个代码块，再塞进模板里形成一个完整的类文件。额外的代码内容当然是要手动添加。<br>我最一开始写的时候，参数基本齐全了也没有去考虑追加参数的问题，但在某次修改json里的参数运行脚本之后，原本手动添加的内容被覆盖，找bug想了会才发现，于是改了下逻辑。<br>新的逻辑区别在于，模板文件里会划分出一个区域，正则表达式去寻找这个区域，在区域内部追加或者覆写。当然会是先检查文件是否存在。</p><p>此贴暂时终结，转新帖。</p>]]></content>
+    
+    
+    <categories>
+      
+      <category>开发日志</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>Profile WaterDrop SDF</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>Blender中mmd方案下皮肤阴影原理及优化</title>
+    <link href="/2026/03/21/Post1/"/>
+    <url>/2026/03/21/Post1/</url>
+    
+    <content type="html"><![CDATA[<p>接触过mmd插件，导入过vrm模型的朋友们一定会遇到下面这种情况：<br><video controls width="100%" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"><br>  <source src="/posts_resource/post1/mmdMethod.mp4" type="video/mp4"><br></video></p><p>欸你这阴影也太奇怪了吧。正看还好，视角稍微变化一下就难以直视啊。</p><p>于是我针对这个状况简单做了一个优化，先直接看一下结果，如下：<br><video controls width="100%" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"><br>  <source src="/posts_resource/post1/improvedMethod.mp4" type="video/mp4"><br></video><br>实现了边缘阴影的平滑过渡，效果还可以。那么接下来就来聊聊我实现这一效果的思路。</p><p>首先我们需要了解下mmd方案的实现方案：通过屏幕空间的物体法线转换成采样纹理用的uv，其插件连接和采样用的纹理如下：</p><div style="display: flex; gap: 0px;">  <img src="/posts_resource/post1/screenUV.png" style="width: 80%; border-radius: 8px;">  <img src="/posts_resource/post1/skin2.png" style="width: 100%; border-radius: 0px;"></div><br></br>用大白话稍微解释一下：将模型的法线数据转换到屏幕空间下，然后在屏幕的角度观测模型法线的朝向，左右，上下就对应屏幕的x，y轴，将这个稍加变化（对应映射节点,涉及到坐标空间变化，矢量的最大最小范围变化，需要映射一下），用作采样纹理的UV，就可以让屏幕视角看起来法线朝下的部分，一般来说就是不受光的部分，采样到纹理中深色部分。<blockquote><p>所以其实skin纹理最关键的是y分量，完全可以做成一个一维图。因此一张图中实际可以存储多个色号提高利用率？</p></blockquote><p>接下来说说优化部分：我们要得到过渡的效果，其实是求一个合理的线性变化。这里的问题是原纹理是离散的，只有两种颜色而不存在中间过渡。</p><blockquote><p>欸那我手动涂抹一下改一下纹理不就好了（）那我不就水不了了嘛）</p></blockquote><p>这一点也比较好解决，结合实际情况会发现引入连续的y分量即可。也就是利用uv中v分量，构建一个线性关系函数，然后可以把这个函数结果传递给颜色的饱和度分量，因为这里刚好有一个量是白色嘛比较方便。<br><img src="/posts_resource/post1/improvedUV.png" alt="节点参考"><br><img src="/posts_resource/post1/improvedSkin2.png" alt="改善后的贴图参考"></p><p>说实话实际去做的时候不会想得这么多，一方面这个效果比较简单，很容易想到找一个线性关系去过渡。但我个人认为理清其中的某个思路比较关键，可以通用到其他问题的解决方案。</p><p>最后贴一下渲染效果对比：<br><video controls width="100%" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"><br>  <source src="/posts_resource/post1/linnai.mp4" type="video/mp4"><br></video></p><p>左为mmd方案的效果，右为自己做的渲染效果。</p><p>觉得还差些意思，这个后面看看时间调整一下</p>]]></content>
+    
+    
+    <categories>
+      
+      <category>效果总结</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>Blender mmd插件 皮肤阴影 屏幕法线</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  
+</search>

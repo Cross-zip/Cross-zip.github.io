@@ -1,0 +1,834 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Cross-zip">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="总的来说是把先前的理论知识付诸实践。 之前有了解过一些合批处理，实例化，以及各种Buffer缓冲区，那么现在就是去用profile工具对比测试一下。性能优化这方面带着了解看看。 然后就是按着一定想法去做一些更加完善的效果，作为作品集的一部分。目前正在推进的，也就是这周刚刚开始的一个屏幕水滴效果。 起初的构想是computeSahder在屏幕大小的纹理上构建水滴的sdf距离场，然后shader部分负">
+<meta property="og:type" content="article">
+<meta property="og:title" content="WaterDrop及工具开发">
+<meta property="og:url" content="http://example.com/2026/03/24/Post2/index.html">
+<meta property="og:site_name" content="Cross的个人博客">
+<meta property="og:description" content="总的来说是把先前的理论知识付诸实践。 之前有了解过一些合批处理，实例化，以及各种Buffer缓冲区，那么现在就是去用profile工具对比测试一下。性能优化这方面带着了解看看。 然后就是按着一定想法去做一些更加完善的效果，作为作品集的一部分。目前正在推进的，也就是这周刚刚开始的一个屏幕水滴效果。 起初的构想是computeSahder在屏幕大小的纹理上构建水滴的sdf距离场，然后shader部分负">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/posts_resource/post2/waterTest.png">
+<meta property="og:image" content="http://example.com/posts_resource/post2/seed1.png">
+<meta property="og:image" content="http://example.com/posts_resource/post2/seed2.png">
+<meta property="og:image" content="http://example.com/posts_resource/post2/waterDrop1.png">
+<meta property="og:image" content="http://example.com/posts_resource/post2/autoCode.png">
+<meta property="article:published_time" content="2026-03-24T15:22:46.000Z">
+<meta property="article:modified_time" content="2026-04-12T15:44:44.060Z">
+<meta property="article:author" content="Cross-zip">
+<meta property="article:tag" content="Profile WaterDrop SDF">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://example.com/posts_resource/post2/waterTest.png">
+  
+  
+  
+  <title>WaterDrop及工具开发 - Cross的个人博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.9","typing":{"enable":false,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Cross的个人博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/custom_img/preview.gif') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">WaterDrop及工具开发</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-03-24 23:22" pubdate>
+          2026年3月24日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          3.9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          33 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">WaterDrop及工具开发</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>总的来说是把先前的理论知识付诸实践。</p>
+<p>之前有了解过一些合批处理，实例化，以及各种Buffer缓冲区，那么现在就是去用profile工具对比测试一下。性能优化这方面带着了解看看。</p>
+<p>然后就是按着一定想法去做一些更加完善的效果，作为作品集的一部分。<br>目前正在推进的，也就是这周刚刚开始的一个屏幕水滴效果。</p>
+<p>起初的构想是computeSahder在屏幕大小的纹理上构建水滴的sdf距离场，然后shader部分负责水滴的透明+折射效果。主要的参考对象除了脑海中之前见过的类似画面，还有就是我的电脑桌面就是这样的一个效果，不过其中有一些flowmap实现的东西，暂且没有考虑去做。<br>后来我很快注意到水滴的动态效果，水滴分布的噪声图，以及sdf和shader部分对应的一些问题，解决方法并不难想，但有些还是不那么“正规”。比如说噪声图这种，我觉得在一个工业流程中，应该是其他软件根据特定需求制作好再导入引擎，而非我在ComputeShader里面生成，然后传递给下一个kernel使用。这里也引出一个问题就是，我对一些材质&#x2F;特效制作软件其实不算熟悉，虽然说这些其实更适合特效&#x2F;材质向的TA使用，对于一个大概是走渲染（后处理）的实习生来说，这些了解一些或许更好，但从目前最有效率的方法来看，我大概会暂且搁置。不过在kernel里手动生成的时候也算熟悉一些原理。</p>
+<blockquote>
+<p>截止到3.24晚，目前创建出了相关的代码文件，做好了参数绑定结构等等，对于静态水滴的形状和sdf构建已经形成，多个种子随机分布也建成，接下来打算先把shader部分写一下初步看看效果。</p>
+</blockquote>
+<p>&#x2F;&#x2F;&#x2F;3.25编</p>
+<p>出现了一个让人头疼的问题，把前后两个核函数合并的时候需要获取周围最大半径内的种子点。保底（稳定）的做法是遍历半径内的像素点，但是写起来有些地方也比较麻烦（觉得不够优雅）。但我尝试去将种子点存储到一个区域方便后续获取。因为GPU的异步操作特性，同步存储可以用到AppendStructBuffer，然而并不支持直接获取长度，也不支持下标查询，自己手写lock锁比较臃肿，且不能保证高效。<br>梳理一下我这个做法的需求，本质上是需要每一个点去查找周围可能存在的种子点，而我的种子点存储方式（因为生成的方式）读取效率低下。所以现在解决的方法一眼能看到的，一种是改变存储方式，那就要改变生成方式；一种是用之前说的保底做法。或许还有我没有了解到的方法？</p>
+<p>&#x2F;&#x2F;&#x2F;3.25晚编<br>原子计数器是对的，网格划分是对的<br>前者解决了异步存储问题，后者应该说是针对稀疏种子点的一种优化策略，之前一闪而过想到过，碍于主要矛盾不在这没去思考。等我写一手.</p>
+<p>&#x2F;&#x2F;&#x2F;3.26编<br>昨晚之后处理了一些bug，然后把屏幕水滴的种子生成给做了出来，初步捏了一下静态水滴的形状，不过不算理想</p>
+<div style="display: flex; gap: 0px;">
+  <img src="/posts_resource/post2/waterTest.png" srcset="/img/loading.gif" lazyload style="width: 80%; border-radius: 8px;">
+  <img src="/posts_resource/post2/seed1.png" srcset="/img/loading.gif" lazyload style="width: 100%; border-radius: 0px;">
+  <img src="/posts_resource/post2/seed2.png" srcset="/img/loading.gif" lazyload style="width: 100%; border-radius: 0px;">
+</div>
+<br></br>
+有几方面待优化，一个是利用前面提到的网格划分类似的想法，把一定区域内的种子视作为一个，避免点堆积
+一个是水滴的下方光线遮蔽，或者说伪阴影？的优化，目前是固定了斜下方，方向稍微调整一下，还有不同水滴的阴影强度需要依靠某样东西来决定，比如光线强度，越靠某个方向阴影越弱这样的
+
+<p>&#x2F;&#x2F;&#x2F;3.26晚编<br><img src="/posts_resource/post2/waterDrop1.png" srcset="/img/loading.gif" lazyload alt="水滴+模糊"><br>稍微修改一下能出一点效果，不过还不够。还有一个尝试性的动态效果暂时就不放上来了。先去优化一下种子生成逻辑的部分。然后可能会尝试找一些案例场景文件测试一下，我目前的场景还是太初始化了，考虑到后面可能要放到作品集里还是先美化一部分东西。</p>
+<p>&#x2F;&#x2F;&#x2F;3.27编<br>虽然昨天说要美化一些东西但好像美化到代码上了（）<br>因为编写的时候需要绑定很多参数，从computeShader绑定到csharp到shader文件的property，每多&#x2F;修改一个参数就需要多写若干行代码，于是用python写了一个脚本，以json文件作为唯一信息源，去自动生成c#绑定文件和shader文件的property，顺便优化了一下代码结构，迁移参数到一个统一的材质实例中。<br><img src="/posts_resource/post2/autoCode.png" srcset="/img/loading.gif" lazyload alt="自动生成的脚本（部分）"><br>自动生成的时候没去进行缩进操作，毕竟是自己用，非功能性需求就适当忽略。<br><br></br><br>脚本工具编写的时候也有些取舍问题。作为一个自动化脚本，能节省重复性内容，但是还需要额外的逻辑补充，这个对于不同的核函数是不同的，所以尽管我想让脚本把findkernel和dispatch都帮我写了，但这样写起来，嗯，至少我觉得难受。所以实际半自动就行吧。</p>
+<p>明天休息一天，和朋友约了去线下展会</p>
+<blockquote>
+<p>所以网格划分又被鸽了</p>
+</blockquote>
+<p>&#x2F;&#x2F;&#x2F;3.30编<br>周末没写东西，周一恢复。<br>回忆了一下上周五写的脚本，只能说拓展性很低啊，很多自己的模板内容在里面，修改得从代码改，感觉不如ai补全啊（）这种情况的一次性脚本，还是自己写着玩玩的，就当练手了<br>另外，这里记录一个小问题。上周截的一张图，可以注意到虽然是rider打开的脚本，但是很多代码行都是白色的，也就是说rider实际上没有把这段脚本接入监管。因为我是用py脚本直接在文件目录创建的，所以和在unity里直接创建还是有区别。意识到这一点之后我查看了资源管理器，缺少meta文件。于是打开unity后，自动生成了meta文件，然后代码的颜色显示就恢复正常。</p>
+<p>还有这些更代码向的东西，一方面觉得用到的技术不是很高深，一方面不像shader&#x2F;图形渲染那样直观，贴代码总觉得在写实验报告，所以图片就比较少）</p>
+<blockquote>
+<p>明天一定开始优化waterdrop生成方案</p>
+</blockquote>
+<p>&#x2F;&#x2F;&#x2F;3.31编<br>  —–优化生成方案ing—–<br>  继续往下想着就会注意到从一开始的计算密度方式就不合适，存在问题。当然在后续思考中我自己想到了一个解决方案。<br>  因为本人在思考的时候不太能记得住思考过程，所以渐渐养成了码字记录思考过程的习惯，以下是先前记录的部分过程：</p>
+<pre><code class="hljs">需要一个用于网格区域的原子计数器，计算当前区域内种子点的个数，可能用于平均位置计算。
+每个grid需要管理一个counter，现两种做法：
+  1.每个grid仅一个seed，那么grid大小更接近控制密度，这样的话需要优化一开始的密度控制，而且也可以把这个看作是buffer类型的texture
+  2.每个grid计算若干个seed的平均位置，这样每个grid需要额外管理一个seedBuffer
+(加起来其实也就是一张texture大小，但是在代码会稍微多一些)，计算交给cpu；这种做法在处理某些精确计算的时候可能更有用
+综上所述选择第一种做法
+
+不管怎么做，在不改变seed图的情况下，去动态生成/改变密度似乎不太可行，要实现或许就要提前储存一些数据
+不过我初步设想了一种做法，或许可以模拟密度降低的样子：
+间断性计算点距。假设原本我们有一张很密集的seed图，我们正常采样都是逐个像素计算，得出的sdf图应该是很密集的斑状点图
+</code></pre>
+<p>  现在我们不再逐个像素计算，可能是每间隔10个像素采样一次，理论上应该能得倒密度降低的视觉效果，只要原本的seed图足够密集。<br>  那么现在就可以通过改变采样距离来改变密度效果，而没必要去改变原seed图，对调试友好，也有做更多动态效果的可能</p>
+<p>  想到这一点后就会发现前面很多做法都没必要了，一些参数都可以去掉。还好之前写了工具，改起来方便。</p>
+<p>  总结来说其实是一个采样的问题，采样在图形学中会经常被提及。这边突然用到这一概念，感觉像是基本功一样的东西冒出来）</p>
+<p>&#x2F;&#x2F;&#x2F;4.3编<br>周三因为一些事情休息了一天，周四晚上做完赶着回宿舍洗澡不然没水）所以没来的及记录<br>先补一下过去两天内的一些思考和实践：</p>
+<p>首先是31号晚上想到的想法：通过改变”采样“距离来实现密度的控制。可能突然想到会导致自身稍微有些激动，细节上没有去验证，所以按照当时的大致想法不太可行。<br>说实话我自身在这个效果上花了有一些时间了，纯自己研究应该也要有个限制，不然会有些内耗了。所以打算向外求索看看。<br>在那之前，也就是我周四在做的事情，是修正了脚本生成工具，和我csharp参数绑定里面一个很大的错误。<br>之前绑定参数用的csharp脚本存在一处十分不妥的地方，我把绑定参数用的脚本类所在的大类，继承了monobehaviour。但既然我在写render的内容，那么交托renderFeature,renderPass理应更安全更合适一些，也就是在管线层面工作而非物体层面。之前有遇到和似乎生命周期相关的bug，也是因为把shader相关的参数绑定相当于挂载到了一个gameobject上面，不方便管理。挂载到管线里应该会省事一些。</p>
+<blockquote>
+<p>因为之前基本是直接写shader的内容，csharp，或者说unity引擎其他部分，除了用renderfeature，几乎没有接触，这里一开始没注意到。不过好在说周三中途休息的一天突然注意到了，及时修正。</p>
+</blockquote>
+<p>另外，既然修正脚本生成工具的模板内容，也顺便改了些内容让工具更合理。<br>因为这个工具的主要逻辑是根据json里的参数数据分门别类，为不同的绑定参数代码追加相应的内容，形成一个个代码块，再塞进模板里形成一个完整的类文件。额外的代码内容当然是要手动添加。<br>我最一开始写的时候，参数基本齐全了也没有去考虑追加参数的问题，但在某次修改json里的参数运行脚本之后，原本手动添加的内容被覆盖，找bug想了会才发现，于是改了下逻辑。<br>新的逻辑区别在于，模板文件里会划分出一个区域，正则表达式去寻找这个区域，在区域内部追加或者覆写。当然会是先检查文件是否存在。</p>
+<p>此贴暂时终结，转新帖。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%97/" class="category-chain-item">开发日志</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Profile-WaterDrop-SDF/" class="print-no-link">#Profile WaterDrop SDF</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>WaterDrop及工具开发</div>
+      <div>http://example.com/2026/03/24/Post2/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Cross-zip</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年3月24日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/04/09/Post3/" title="WaterDrop及工具开发2.0">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">WaterDrop及工具开发2.0</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/03/21/Post1/" title="Blender中mmd方案下皮肤阴影原理及优化">
+                        <span class="hidden-mobile">Blender中mmd方案下皮肤阴影原理及优化</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
