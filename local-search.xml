@@ -4,6 +4,56 @@
   
   
   <entry>
+    <title>常见距离度量方式</title>
+    <link href="/2026/04/15/Distance/"/>
+    <url>/2026/04/15/Distance/</url>
+    
+    <content type="html"><![CDATA[<p>主要用于说明几种度量距离的方式，方便其他文章说明时引用</p><p>这里直接ai总结贴图：</p><p><img src="/posts_resource/Distance/oDistance.png"><br><img src="/posts_resource/Distance/manDistance.png"><br><img src="/posts_resource/Distance/chebyDistance.png"><br><img src="/posts_resource/Distance/minkDistance.png"></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>Unity相关杂项</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>Unity</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>Unity自动曝光实现细节</title>
+    <link href="/2026/04/15/ExposureValue/"/>
+    <url>/2026/04/15/ExposureValue/</url>
+    
+    <content type="html"><![CDATA[<p>看一篇博客的时候注意到里面的一段代码实现，觉得有点奇怪，遂记录</p><p>原博客地址：<a href="https://blog.axonsin.software/posts/hdrp-exposure/">https://blog.axonsin.software/posts/hdrp-exposure/</a></p><p>里面谈及unityHDRP自动曝光实现，有一段内容是这样的：</p><p>float WeightSample(uint2 pixel, float2 sourceSize, float luminance) {<br>    &#x2F;&#x2F; 经典的Center-weighted，中心画面权重高<br>    float screenDiagonal &#x3D; 0.5f * (sourceSize.x + sourceSize.y);<br>    const float2 kCenter &#x3D; sourceSize * 0.5f;<br>    return 1.0 - saturate(pow(length(kCenter - pixel) &#x2F; screenDiagonal, 1.0));<br>}</p><p>这里的screenDiagonal计算的是屏幕四角到中心的距离，但并不等于实际距离。<br>ai给的解释是，这是一种近似计算，避免了平方开根的性能消耗。另外这似乎是unity管线的“祖传”经验公式</p><p>然后我突然意识到，这其实是换成了曼哈顿距离。后面的归一化其实是是在拿一个欧氏距离去除以一个曼哈顿距离</p><blockquote><p>关于这里不同的距离计算方式，另一篇博客里就有一个小结：</p></blockquote>]]></content>
+    
+    
+    <categories>
+      
+      <category>杂项-Unity</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>Unity</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>Blender节点整理插件</title>
     <link href="/2026/04/13/nodeManager/"/>
     <url>/2026/04/13/nodeManager/</url>
